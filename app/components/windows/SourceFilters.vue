@@ -74,12 +74,19 @@
   height: 100%;
 }
 
+.nav-menu {
+  background: none;
+}
+
 .side-menu > .sl-vue-tree-toggle {
   display: none;
 }
 
+.side-menu .sl-vue-tree-node-item {
+  padding: 0 16px;
+}
+
 .controls {
-  margin-left: 8px;
-  margin-bottom: 16px;
+  padding: 16px;
 }
 </style>

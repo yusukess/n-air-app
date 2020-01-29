@@ -39,6 +39,7 @@
 
 <style lang="less" scoped>
 @import "../../styles/_colors";
+@import "../../styles/mixins";
 
 .container {
   position: relative;
@@ -68,7 +69,7 @@
   cursor: pointer;
 
   &:hover {
-     background-color: rgba(@black, .2);
+     color: @text-primary;
   }
 
   > i {
@@ -78,12 +79,9 @@
 }
 
 .selector {
-  border-radius: 4px;
-  margin: 0 0 0 8px; 
-  padding: 8px 1px;
+  margin: 0 0 0 8px;
   width: 330px;
-  background-color: @bg-primary;
-  box-shadow: 0 0 4px rgba(@black, 0.5), inset 0 0 0 1px rgba(@white, 0.1);
+  .popup-menu-base-style;
 
   & > .item {
     list-style: none;
@@ -96,11 +94,11 @@
     cursor: pointer;
 
     &.active {
-      background-color: rgba(@black, .2);
+      .active
     }
 
     &:not(.active):hover {
-      background-color: rgba(@white, .04);
+      .hover
     }
 
     > i {

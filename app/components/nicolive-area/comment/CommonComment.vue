@@ -10,23 +10,21 @@
 <style lang="less" scoped>
 @import "../../../styles/_colors";
 @import "../../../styles/mixins";
+@import "../../../styles/comment";
 
 .root {
   display: flex;
   flex-direction: row;
 
   &:hover, &.pseudoHover {
-    background-color: @hover;
+    .hover;
 
     & > .comment-body {
       color: @white;
     }
 
     & > .comment-misc {
-      display: flex;
-      align-items: center;
-      padding-left: 8px;
-      color: @light-grey;
+      display: block;
     }
   }
 
@@ -36,27 +34,17 @@
 }
 
 .comment-number {
-  min-width: 40px;
-  padding-left: 16px;
-  text-align: right;
-  flex-shrink: 0;
-  box-sizing: border-box;
+  .common--comment-number;
   color: @grey;
 }
 
 .comment-body {
-  margin-left: 16px;
-  overflow-x: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  flex-grow: 1;
-  color: @light-grey;
+  .common--comment-body;
+  color: @white;
 }
 
 .comment-misc {
+  .common--comment-misc;
   display: none;
-  width: 32px;
-  flex-shrink: 0;
-  text-align: center;
 }
 </style>

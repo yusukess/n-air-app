@@ -86,22 +86,6 @@
   font-size: 12px;
   height: 32px;
   line-height: 32px;
-  width: 100%;
-
-  &:hover {
-    .hover;
-
-     > .comment-body {
-       color: @white;
-     }
-
-    > .comment-misc {
-      display: flex;
-      align-items: center;
-      padding-left: 8px;
-      color: @light-grey;
-    }
-  }
 
   &:first-child {
     margin-top: 8px;

@@ -81,7 +81,10 @@
 .selector {
   margin: 0 0 0 8px;
   width: 330px;
-  .popup-menu-base-style;
+  border-radius: 4px;
+  padding: 8px 1px;
+  background-color: @bg-primary;
+  box-shadow: 0 0 4px rgba(@black, 0.5), inset 0 0 0 1px rgba(@white, 0.1);
 
   & > .item {
     list-style: none;

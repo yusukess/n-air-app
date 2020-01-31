@@ -1,5 +1,6 @@
 <template>
-  <div class="root" :class="chat.type">
+  <div class="root" :class="chat.type" :title="computedTitle">
+    <div class="comment-header"></div>
     <div class="comment-body">{{ computedContent }}</div>
   </div>
 </template>

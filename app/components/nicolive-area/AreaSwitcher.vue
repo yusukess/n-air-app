@@ -4,7 +4,7 @@
       <slot :name="activeContent.slotName" />
     </div>
     <div class="header">
-      <popper trigger="click" :options="{ placement: 'bottom-end' }">
+      <popper trigger="hover" :options="{ placement: 'bottom-end' }">
         <div class="popper">
           <ul class="selector">
             <li

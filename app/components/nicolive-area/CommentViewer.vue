@@ -77,6 +77,10 @@
 .list {
   flex-grow: 1;
   overflow-y: auto;
+
+  &::-webkit-scrollbar-thumb {
+    border-color: @bg-secondary;
+  }
 }
 
 .row {

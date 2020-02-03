@@ -26,6 +26,7 @@
   display: flex;
   justify-content: center;
   padding: 8px;
+  border-top: 1px solid @bg-primary;
   background-color: @bg-secondary;
   position: relative;
 }

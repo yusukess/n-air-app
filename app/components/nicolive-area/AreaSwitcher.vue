@@ -67,10 +67,6 @@
   border-radius: 4px;
   cursor: pointer;
 
-  &:hover {
-     background-color: rgba(@black, .2);
-  }
-
   > i {
     font-size: 10px;
     margin-left: 8px;
@@ -96,11 +92,11 @@
     cursor: pointer;
 
     &.active {
-      background-color: rgba(@black, .2);
+      .active();
     }
 
     &:not(.active):hover {
-      background-color: rgba(@white, .04);
+      .hover();
     }
 
     > i {

@@ -7,11 +7,11 @@
       <i class="icon-settings icon-btn" v-tooltip.bottom="localFilterTooltip" @click="isLocalFilterOpened = true"></i>
     </div>
     <div class="content">
-      <div class="list">
+      <div class="list" ref="scroll">
         <component
           class="row"
-          v-for="(item, index) of items"
-          :key="index"
+          v-for="item of items"
+          :key="item.seqId"
           :is="componentMap[item.type]"
           :chat="item"
           :vposToLiveTime="vposToLiveTime"
@@ -24,11 +24,11 @@
       <div class="pinned" v-if="Boolean(pinnedComment)">
         <div class="comment-number">{{ pinnedComment.value.no }}</div>
         <div class="comment-body">
-          {{ itemToString(pinnedComment) }}
+          {{ pinnedItemComtent(pinnedComment) }}
         </div>
         <div class="close"><i class="icon-close icon-btn" @click="pinnedComment = null"></i></div>
       </div>
-      <div class="scroll-to-latest" v-if="!isLatestVisible && items.length > 0">最新のコメントへ移動<i class="icon-down-arrow"></i></div>
+      <button type="button" @click="scrollToLatest" class="scroll-to-latest" v-if="!isLatestVisible && items.length > 0">最新のコメントへ移動<i class="icon-down-arrow"></i></button>
     </div>
     <comment-form class="comment-form" />
     <comment-filter class="overlay" @close="isFilterOpened = false" v-if="isFilterOpened"/>
@@ -56,7 +56,7 @@
   width: 100%;
   height: 48px;
   padding: 4px 16px;
-  border-bottom: 1px solid @bg-primary;
+  border-bottom: 1px solid @bg-quaternary;
 
   > .icon-btn {
      margin-left: 16px;
@@ -77,10 +77,6 @@
 .list {
   flex-grow: 1;
   overflow-y: auto;
-
-  &::-webkit-scrollbar-thumb {
-    border-color: @bg-secondary;
-  }
 }
 
 .row {
@@ -88,6 +84,7 @@
   height: 32px;
   line-height: 32px;
   width: 100%;
+  margin-top: 4px;
 
   &:first-child {
     margin-top: 8px;

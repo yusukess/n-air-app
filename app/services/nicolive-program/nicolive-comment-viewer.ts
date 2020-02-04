@@ -1,34 +1,48 @@
 import { Inject } from 'util/injector';
 import { NicoliveProgramService } from './nicolive-program';
-import { map, distinctUntilChanged, bufferTime, filter } from 'rxjs/operators';
+import { map, distinctUntilChanged, bufferTime, filter, finalize, merge, tap } from 'rxjs/operators';
 import { StatefulService, mutation } from 'services/stateful-service';
-import { MessageServerClient, MessageServerConfig, isChatMessage, ChatMessage } from './MessageServerClient';
+import {
+  MessageServerClient,
+  MessageServerConfig,
+  isChatMessage,
+  ChatMessage,
+  MessageResponse,
+  isThreadMessage,
+  isLeaveThreadMessage,
+} from './MessageServerClient';
+import { Subscription, Subject } from 'rxjs';
 import { ChatMessageType, classify } from './ChatMessage/classifier';
 import { Subscription, from } from 'rxjs';
 
 export type WrappedChat = {
   type: ChatMessageType;
   value: ChatMessage;
+  seqId: number;
 };
 
 interface INicoliveCommentViewerState {
   messages: WrappedChat[];
-  popoutMessages: number;
-  arrivalMessages: number;
+  popoutMessages: WrappedChat[];
 }
 
 export class NicoliveCommentViewerService extends StatefulService<INicoliveCommentViewerState> {
   private client: MessageServerClient | null = null;
   @Inject() private nicoliveProgramService: NicoliveProgramService;
 
+  private backdoorSubject: Subject<Omit<WrappedChat, 'seqId'>> = new Subject();
+
   static initialState: INicoliveCommentViewerState = {
     messages: [],
-    popoutMessages: 0,
-    arrivalMessages: 0,
+    popoutMessages: [],
   };
 
   get items() {
     return this.state.messages;
+  }
+
+  get recentPopouts() {
+    return this.state.popoutMessages;
   }
 
   init() {
@@ -53,112 +67,82 @@ export class NicoliveCommentViewerService extends StatefulService<INicoliveComme
     roomURL,
     roomThreadID,
   }: MessageServerConfig): void {
-    this.lastSubscription?.unsubscribe();
-    this.clearState();
+    this.reset();
     this.client = new MessageServerClient({ roomURL, roomThreadID });
-    // this.lastSubscription = this.client.connect().pipe(
-    //   bufferTime(1000),
-    //   filter(arr => arr.length > 0)
-    // ).subscribe(values => {
-    //   this.onMessage(values.filter(isChatMessage).map(x => ({
-    //     type: classify(x.chat),
-    //     value: x.chat,
-    //   })));
-    // })
-    // this.client.requestLatestMessages();
-    this.lastSubscription = from([
-      {
-        premium: 0,
-        content: 'non premium user',
-      },
-      {
-        premium: 1,
-        content: 'premium user',
-      },
-      {
-        premium: 3,
-        content: 'operator comment',
-      },
-      {
-        premium: 3,
-        content: '/perm operator comment(perm)',
-      },
-      {
-        premium: 3,
-        content: '/nicoad {"version":"1","totalAdPoint":10000,"message":"【ニコニ広告】提供：○○さん「応援しています」（100pt）"}',
-      },
-      {
-        premium: 3,
-        content: '/gift 12345 23456 "ギフトを送った人" 500 "がんばってください" "ギフトの名前"',
-      },
-      {
-        premium: 3,
-        content: '/gift 12345 23456 "ギフトを送った人" 500 "貢献順位あり" "ギフトの名前" 1',
-      },
-      {
-        premium: 3,
-        content: '/spi "「ネタ」が貼られました"',
-      },
-      {
-        premium: 3,
-        content: '/quote "「${引用した配信者名}さん」が引用を開始しました ${引用している番組のコメント}（${引用した配信者名}さんの番組）"',
-      },
-      {
-        premium: 3,
-        content: '/cruise クルーズ。これ対応しなくていいのでは？',
-      },
-      {
-        premium: 3,
-        content: '/info 1 市場変更通知',
-      },
-      {
-        premium: 3,
-        content: '/info 2 コミュニティ新規加入通知',
-      },
-      {
-        premium: 3,
-        content: '/info 3 延長通知',
-      },
-      {
-        premium: 3,
-        content: '/info 5 タグ追加',
-      },
-      {
-        premium: 3,
-        content: '/info 6 地震速報通知',
-      },
-      {
-        premium: 3,
-        content: '/info 7 地震確定通知',
-      },
-      {
-        premium: 3,
-        content: '/info 8 ランクイン通知',
-      },
-    ].map((x, i) => ({ chat: {...x, vpos: i * 100, no: i + 1 }}))).pipe(
-      bufferTime(1000),
-      filter(arr => arr.length > 0)
-    ).subscribe(values => {
-        this.onMessage(values.filter(isChatMessage).map(x => ({
-          type: classify(x.chat),
-          value: x.chat,
-        })));
-      })
+    this.connect();
+  }
+
+  refreshConnection() {
+    this.reset();
+    this.connect();
+  }
+
+  private reset() {
+    this.unsubscribe();
+    this.clearState();
+  }
+
+  private unsubscribe() {
+    this.lastSubscription?.unsubscribe();
+  }
+
+  private connect() {
+    this.lastSubscription = this.client.connect()
+      .pipe(
+        finalize(() => {
+          // FIXME: 動かない（流せてもコンポーネントに反映できない）
+          this.backdoorSubject.next({
+            type: 'n-air-emulated',
+            value: {
+              content: 'コメントサーバーから切断されました',
+            },
+          });
+        }),
+        tap(msg => {
+          if (isThreadMessage(msg) && (msg.thread.resultcode ?? 0 === 0)) {
+            this.backdoorSubject.next({
+              type: 'n-air-emulated',
+              value: {
+                content: 'スレッドへの参加に失敗しました',
+              },
+            });
+            setTimeout(() => this.unsubscribe(), 3000);
+          } else if (isLeaveThreadMessage(msg)) {
+            this.backdoorSubject.next({
+              type: 'n-air-emulated',
+              value: {
+                content: 'スレッドから追い出されました',
+              },
+            });
+            setTimeout(() => this.unsubscribe(), 3000);
+          } else if (isChatMessage(msg) && (msg.chat.content === '/disconnect')) {
+            setTimeout(() => this.unsubscribe(), 3000);
+          }
+        }),
+        filter(isChatMessage),
+        map(({ chat }) => ({
+          type: classify(chat),
+          value: chat,
+        })),
+        merge(this.backdoorSubject.asObservable()),
+        map(({ type, value }, seqId) => ({ type, value, seqId })),
+        bufferTime(1000),
+        filter(arr => arr.length > 0),
+      ).subscribe(values => this.onMessage(values));
+    this.client.requestLatestMessages();
   }
 
   private onMessage(values: WrappedChat[]) {
-    const arrivalLength = values.length;
     const concatMessages = this.state.messages.concat(values);
-    const concatLength = concatMessages.length;
+    const popoutMessages = concatMessages.slice(100);
     this.SET_STATE({
-      messages: concatMessages,
-      popoutMessages: Math.max(concatLength - 200, 0),
-      arrivalMessages: arrivalLength,
+      messages: concatMessages.slice(-100),
+      popoutMessages,
     });
   }
 
   private clearState() {
-    this.SET_STATE({ messages: [], popoutMessages: 0, arrivalMessages: 0 });
+    this.SET_STATE({ messages: [], popoutMessages: [] });
   }
 
   @mutation()

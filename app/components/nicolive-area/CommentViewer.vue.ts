@@ -26,7 +26,8 @@ const componentMap: { [type in ChatMessageType]: Vue.Component } = {
   quote: SystemMessage,
   cruise: SystemMessage,
   info: SystemMessage,
-  unknown: CommonComment,
+  unknown: SystemMessage,
+  'n-air-emulated': SystemMessage,
 };
 
 @Component({
@@ -64,24 +65,32 @@ export default class CommentViewer extends Vue {
   pinnedComment: WrappedChat = null;
   isLatestVisible = true;
 
+  private applyLocalFilter = ({ value }: WrappedChat) => this.nicoliveCommentLocalFilterService.filter(value);
+
+  scrollToLatest() {
+    const scrollEl = this.$refs.scroll as HTMLElement;
+    scrollEl.scrollTop = scrollEl.scrollHeight;
+  }
+
   pin(item: WrappedChat): void {
     if (item.type === 'normal') {
       this.pinnedComment = item;
     }
   }
 
+  pinnedItemComtent(item: WrappedChat): string {
+    return `${item.value.content}  (${this.vposToLiveTime(item.value.vpos)})`;
+  }
+
   componentMap = componentMap;
 
   get items() {
-    return this.nicoliveCommentViewerService.items.filter(this.applyLocalFilter);
+    return this.nicoliveCommentViewerService.items;
   }
 
   refreshConnection() {
     this.nicoliveCommentViewerService.refreshConnection();
   }
-
-  private applyLocalFilter = ({ value }: WrappedChat) => this.nicoliveCommentLocalFilterService.filter(value);
-
   vposToLiveTime = (vpos: number = 0): string => {
     const { vposBaseTime, startTime } = this.nicoliveProgramService.state;
     const vposTime = vposBaseTime + Math.floor(vpos / 100);
@@ -151,7 +160,7 @@ export default class CommentViewer extends Vue {
   }
 
   mounted() {
-    const sentinelEl = this.$refs.sentinel as Element;
+    const sentinelEl = this.$refs.sentinel as HTMLElement;
     const ioCallback: IntersectionObserverCallback = (entries) => {
       this.isLatestVisible = entries[0].isIntersecting;
     };
@@ -161,5 +170,18 @@ export default class CommentViewer extends Vue {
     };
     const io = new IntersectionObserver(ioCallback, ioOptions);
     io.observe(sentinelEl);
+  }
+
+  updated() {
+    const scrollEl = this.$refs.scroll as HTMLElement;
+    if (this.isLatestVisible) {
+      this.scrollToLatest();
+    } else {
+      const popouts = this.nicoliveCommentViewerService.recentPopouts.filter(this.applyLocalFilter);
+      const opt = {
+        top: -popouts.length * 32 /* item's height */
+      };
+      scrollEl.scrollBy(opt);
+    }
   }
 }

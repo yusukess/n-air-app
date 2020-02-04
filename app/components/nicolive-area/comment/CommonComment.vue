@@ -10,7 +10,7 @@
 <style lang="less" scoped>
 @import "../../../styles/_colors";
 @import "../../../styles/mixins";
-@import "../../../styles/comment";
+@import "./comment";
 
 .root {
   display: flex;

@@ -1,34 +1,47 @@
 import { Inject } from 'util/injector';
 import { NicoliveProgramService } from './nicolive-program';
-import { map, distinctUntilChanged, bufferTime, filter } from 'rxjs/operators';
+import { map, distinctUntilChanged, bufferTime, filter, finalize, merge, tap } from 'rxjs/operators';
 import { StatefulService, mutation } from 'services/stateful-service';
-import { MessageServerClient, MessageServerConfig, isChatMessage, ChatMessage } from './MessageServerClient';
-import { Subscription } from 'rxjs';
+import {
+  MessageServerClient,
+  MessageServerConfig,
+  isChatMessage,
+  ChatMessage,
+  MessageResponse,
+  isThreadMessage,
+  isLeaveThreadMessage,
+} from './MessageServerClient';
+import { Subscription, Subject } from 'rxjs';
 import { ChatMessageType, classify } from './ChatMessage/classifier';
 
 export type WrappedChat = {
   type: ChatMessageType;
   value: ChatMessage;
+  seqId: number;
 };
 
 interface INicoliveCommentViewerState {
   messages: WrappedChat[];
-  popoutMessages: number;
-  arrivalMessages: number;
+  popoutMessages: WrappedChat[];
 }
 
 export class NicoliveCommentViewerService extends StatefulService<INicoliveCommentViewerState> {
   private client: MessageServerClient | null = null;
   @Inject() private nicoliveProgramService: NicoliveProgramService;
 
+  private backdoorSubject: Subject<Omit<WrappedChat, 'seqId'>> = new Subject();
+
   static initialState: INicoliveCommentViewerState = {
     messages: [],
-    popoutMessages: 0,
-    arrivalMessages: 0,
+    popoutMessages: [],
   };
 
   get items() {
     return this.state.messages;
+  }
+
+  get recentPopouts() {
+    return this.state.popoutMessages;
   }
 
   init() {
@@ -64,36 +77,71 @@ export class NicoliveCommentViewerService extends StatefulService<INicoliveComme
   }
 
   private reset() {
-    this.lastSubscription?.unsubscribe();
+    this.unsubscribe();
     this.clearState();
   }
 
+  private unsubscribe() {
+    this.lastSubscription?.unsubscribe();
+  }
+
   private connect() {
-    this.lastSubscription = this.client.connect().pipe(
-      bufferTime(1000),
-      filter(arr => arr.length > 0)
-    ).subscribe(values => {
-      this.onMessage(values.filter(isChatMessage).map(x => ({
-        type: classify(x.chat),
-        value: x.chat,
-      })));
-    });
+    this.lastSubscription = this.client.connect()
+      .pipe(
+        finalize(() => {
+          // FIXME: 動かない（流せてもコンポーネントに反映できない）
+          this.backdoorSubject.next({
+            type: 'n-air-emulated',
+            value: {
+              content: 'コメントサーバーから切断されました',
+            },
+          });
+        }),
+        tap(msg => {
+          if (isThreadMessage(msg) && (msg.thread.resultcode ?? 0 === 0)) {
+            this.backdoorSubject.next({
+              type: 'n-air-emulated',
+              value: {
+                content: 'スレッドへの参加に失敗しました',
+              },
+            });
+            setTimeout(() => this.unsubscribe(), 3000);
+          } else if (isLeaveThreadMessage(msg)) {
+            this.backdoorSubject.next({
+              type: 'n-air-emulated',
+              value: {
+                content: 'スレッドから追い出されました',
+              },
+            });
+            setTimeout(() => this.unsubscribe(), 3000);
+          } else if (isChatMessage(msg) && (msg.chat.content === '/disconnect')) {
+            setTimeout(() => this.unsubscribe(), 3000);
+          }
+        }),
+        filter(isChatMessage),
+        map(({ chat }) => ({
+          type: classify(chat),
+          value: chat,
+        })),
+        merge(this.backdoorSubject.asObservable()),
+        map(({ type, value }, seqId) => ({ type, value, seqId })),
+        bufferTime(1000),
+        filter(arr => arr.length > 0),
+      ).subscribe(values => this.onMessage(values));
     this.client.requestLatestMessages();
   }
 
   private onMessage(values: WrappedChat[]) {
-    const arrivalLength = values.length;
     const concatMessages = this.state.messages.concat(values);
-    const concatLength = concatMessages.length;
+    const popoutMessages = concatMessages.slice(100);
     this.SET_STATE({
-      messages: concatMessages,
-      popoutMessages: Math.max(concatLength - 200, 0),
-      arrivalMessages: arrivalLength,
+      messages: concatMessages.slice(-100),
+      popoutMessages,
     });
   }
 
   private clearState() {
-    this.SET_STATE({ messages: [], popoutMessages: 0, arrivalMessages: 0 });
+    this.SET_STATE({ messages: [], popoutMessages: [] });
   }
 
   @mutation()

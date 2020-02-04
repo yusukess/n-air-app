@@ -13,7 +13,7 @@
       </div>
       <form class="add-form" @submit.prevent="onAdd">
         <input type="text" v-model="newFilterValue" placeholder="NGコメントを入力" :disabled="adding" :readonly="adding" class="add-input" />
-        <button type="submit" :disabled="adding">追加</button>
+        <button type="submit" :disabled="adding" class="button button--dark">追加</button>
       </form>
       <div class="list">
         <div class="row" v-for="item of currentTypeFilters" :key="item.id">
@@ -37,7 +37,6 @@
   flex-grow: 1;
   flex-basis: 0;
   overflow-y: auto;
-  background-color: @bg-secondary;
 }
 
 .header {
@@ -48,7 +47,7 @@
   height: 48px;
   padding: 4px 16px;
   background-color: @bg-secondary;
-  border-bottom: 1px solid @bg-primary;
+  border-bottom: 1px solid @accent-light;
 
   > .header-item-center {
     font-size: 12px;
@@ -66,11 +65,9 @@
 
 .content {
   flex-grow: 1;
-
   display: flex;
   flex-direction: column;
-
-  background-color: @bg-secondary;
+  background-color: @bg-tertiary;
 }
 
 .content-header {
@@ -78,25 +75,38 @@
   align-items: center;
   flex-shrink: 0;
   font-size: 12px;
-  padding: 0 8px;
+  padding: 8px 8px 0;
   border-bottom: 1px solid @bg-primary;
 
   > button {
+    width: 80px;
     font-size: 12px;
     color: @grey;
-    padding: 0 8px;
     line-height: 40px;
-    margin-right: 8px;
-    margin-bottom: -1px;
-    border-bottom: 1px solid transparent;
+    position: relative;
+
+    &:after {
+      display: block;
+      content: '';
+      width: 100%;
+      height: 2px;
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      background-color: transparent;
+    }
 
     &:hover {
-      color: @text-primary;
+      color: @light-grey;
     }
 
     &.active {
-      color: @text-primary;
+      color: @white;
       border-bottom-color: @text-primary;
+
+      &:after {
+        background-color: @text-secondary;
+      }
     }
   }
 
@@ -110,25 +120,13 @@
 .add-form {
   display: flex;
   justify-content: center;
-  padding: 8px;
+  padding: 16px 8px 8px;
   flex-shrink: 0;
-  border-bottom: 1px solid @bg-primary;
 
   > button {
-    width: 48px;
-    height: 36px;
-
     flex-shrink: 0;
-    
-    border-radius: 2px;
-    margin-left: 8px;
-
-    color: @white;
-    background-color: @nicolive-button;
-
-    &:hover {
-      background-color: @nicolive-button-hover;
-    }
+    border-radius: 0 2px 2px 0;
+    margin-left: -2px;
   }
 }
 
@@ -136,9 +134,10 @@
   font-size: 12px;
   flex-grow: 1;
   width: auto;
-  background-color: @bg-tertiary;
+  background-color: @bg-secondary;
   padding-right: 36px;
   box-sizing: border-box;
+  border-radius: 2px 0 0 2px;
 
   &:focus {
     background-color: @bg-secondary;
@@ -173,12 +172,8 @@
   display: flex;
   flex-direction: row;
 
-  &:first-child {
-    margin-top: 8px;
-  }
-
   &:hover {
-    .hover();
+    .bg-hover();
 
     .item-misc {
       display: flex;

@@ -39,6 +39,7 @@
 
 <style lang="less" scoped>
 @import "../../styles/_colors";
+@import "../../styles/mixins";
 
 .container {
   position: relative;
@@ -67,6 +68,10 @@
   border-radius: 4px;
   cursor: pointer;
 
+  &:hover {
+     .bg-hover();
+  }
+
   > i {
     font-size: 10px;
     margin-left: 8px;
@@ -92,11 +97,11 @@
     cursor: pointer;
 
     &.active {
-      .active();
+      .bg-active();
     }
 
     &:not(.active):hover {
-      .hover();
+      .bg-hover();
     }
 
     > i {

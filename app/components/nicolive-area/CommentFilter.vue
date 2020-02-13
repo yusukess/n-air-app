@@ -2,7 +2,7 @@
   <div class="container">
     <div class="header">
       <div class="header-item-center">放送者NG設定</div>
-      <div class="header-item-right" v-tooltip.left="closeTooltip"><i class="icon-close icon-btn" @click="close"></i></div>
+      <div class="header-item-right"><i class="icon-close icon-btn" @click="close"></i></div>
     </div>
     <div class="content">
       <div class="content-header">
@@ -137,12 +137,6 @@
 
       &::placeholder {
         opacity: .5;
-      }
-    }
-
-    &:hover {
-      &:not(:focus)::placeholder {
-        opacity: 1;
       }
     }
 

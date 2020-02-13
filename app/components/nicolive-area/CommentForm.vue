@@ -35,7 +35,6 @@
   flex-grow: 1;
   width: auto;
   background-color: @bg-primary;
-  padding-right: 36px;
   box-sizing: border-box;
 
   &:focus {
@@ -46,12 +45,6 @@
     }
   }
 
-  &:hover {
-    &:not(:focus)::placeholder {
-      opacity: 1;
-    }
-  }
-
   &::placeholder {
     color: @white;
     opacity: .5;
@@ -59,13 +52,8 @@
 }
 
 .comment-button {
-  width: 36px;
   height: 36px;
-  border-radius: 4px;
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
+  padding: 0 8px 0 16px;
 
   > i {
     font-size: 14px;
